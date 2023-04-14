@@ -25,15 +25,25 @@ void printcmd(struct cmd *cmd)
                 goto printcmd_exit;
             }
 
-            MSG("COMMAND: %s", ecmd->argv[0]);
-            for (i = 1; i < MAXARGS; i++)
-            {            
-                if (ecmd->argv[i] != NULL)
-                {
-                    MSG(", arg-%d: %s", i, ecmd->argv[i]);
-                }
+            int pid = fork();
+
+            if(pid == 0){
+                execvp(ecmd->argv[0], ecmd->argv);
+                exit(0);
+            }else{
+                wait(NULL);
             }
-            MSG("\n");
+
+
+            // MSG("COMMAND: %s", ecmd->argv[0]);
+            // for (i = 1; i < MAXARGS; i++)
+            // {            
+            //     if (ecmd->argv[i] != NULL)
+            //     {
+            //         MSG(", arg-%d: %s", i, ecmd->argv[i]);
+            //     }
+            // }
+            // MSG("\n");
 
             break;
 
@@ -69,9 +79,38 @@ void printcmd(struct cmd *cmd)
         case PIPE:
             pcmd = (struct pipecmd*)cmd;
 
-            printcmd(pcmd->left);
-            MSG("... output of the above command will be redrecited to serve as the input of the following command ...\n");            
-            printcmd(pcmd->right);
+            // printcmd(pcmd->left);
+            // MSG("... output of the above command will be redrecited to serve as the input of the following command ...\n");            
+            // printcmd(pcmd->right);
+
+            int fd[2];
+            pipe(fd);
+            int c1 = fork();
+            int c2;
+
+            if(c1==0){
+                dup2(fd[1],STDOUT_FILENO);
+                close(fd[0]);
+                close(fd[1]);
+                printcmd(pcmd->left);
+                exit(0);
+            }else{
+                wait(NULL);
+                c2 = fork();
+                if(c2==0){
+                    dup2(fd[0], STDIN_FILENO);
+                    close(fd[0]);
+                    close(fd[1]);
+                    printcmd(pcmd->right);
+                    exit(0);
+                }else{
+                    close(fd[0]);
+                    close(fd[1]);
+                    wait(NULL);
+                }
+            }
+            setbuf(stdout, NULL);
+
 
             break;
 
