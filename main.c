@@ -1,5 +1,10 @@
 #include "parser.h"
 
+void handle_sigint(int sig)
+{
+    printf("\nCtrl-C catched. But currently there is no foreground process running.\n");
+}
+
 void printcmd(struct cmd *cmd)
 {
     struct backcmd *bcmd = NULL;
@@ -281,7 +286,6 @@ void execcmd(struct cmd *cmd) {
                     exit(0);
                 }
 
-
                 break;
 
 
@@ -297,6 +301,7 @@ void execcmd(struct cmd *cmd) {
 
 int main(void)
 {
+    signal(SIGINT, handle_sigint);
     static char buf[1024];
     int fd;
 
