@@ -190,7 +190,7 @@ void execcmd(struct cmd *cmd) {
                     // MSG("... input of the above command will be redirected from file \"%s\". \n", rcmd->file);
                     int pid = fork();
                     if(pid == 0){
-                        int fdin = open(rcmd->file, O_RDONLY);
+                        int fdin = open(rcmd->file, O_RDONLY,00700);
                         dup2(fdin, STDIN_FILENO);
 
                         execcmd(rcmd->cmd);
@@ -205,7 +205,7 @@ void execcmd(struct cmd *cmd) {
                     // MSG("... output of the above command will be redirected to file \"%s\". \n", rcmd->file);
                     int pid = fork();
                     if(pid == 0){
-                        int fdout = open(rcmd->file, O_RDWR|O_CREAT|O_TRUNC);
+                        int fdout = open(rcmd->file, O_RDWR|O_CREAT|O_TRUNC, 00700);
                         dup2(fdout, STDOUT_FILENO);
                         
                         execcmd(rcmd->cmd);
@@ -272,6 +272,15 @@ void execcmd(struct cmd *cmd) {
                 //reap them.
                 //printcmd(bcmd->cmd);
                 //MSG("... the above command will be executed in background. \n");    
+
+                int bpid = fork();
+
+                if (bpid == 0){
+                    execcmd(bcmd->cmd);
+                    waitpid(bpid, NULL, 0);
+                    exit(0);
+                }
+
 
                 break;
 
