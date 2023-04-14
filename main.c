@@ -25,6 +25,7 @@ void printcmd(struct cmd *cmd)
                 goto printcmd_exit;
             }
 
+
             int pid = fork();
 
             if(pid == 0){
@@ -50,21 +51,43 @@ void printcmd(struct cmd *cmd)
         case REDIR:
             rcmd = (struct redircmd*)cmd;
 
-            printcmd(rcmd->cmd);
+            // printcmd(rcmd->cmd); 
 
             if (0 == rcmd->fd_to_close)
             {
-                MSG("... input of the above command will be redirected from file \"%s\". \n", rcmd->file);
+                // MSG("... input of the above command will be redirected from file \"%s\". \n", rcmd->file);
+                int pid = fork();
+                if(pid == 0){
+                    int fdin = open(rcmd->file, O_RDONLY);
+                    dup2(fdin, STDIN_FILENO);
+
+                    printcmd(rcmd->cmd);
+                    exit(0);
+                }else{
+                    wait(NULL);
+                    dup2(STDIN_FILENO, 1);
+                }
             }
             else if (1 == rcmd->fd_to_close)
             {
-                MSG("... output of the above command will be redirected to file \"%s\". \n", rcmd->file);
+                // MSG("... output of the above command will be redirected to file \"%s\". \n", rcmd->file);
+                int pid = fork();
+                if(pid == 0){
+                    int fdout = open(rcmd->file, O_RDWR|O_CREAT|O_TRUNC);
+                    dup2(fdout, STDOUT_FILENO);
+                    
+                    printcmd(rcmd->cmd);
+                    exit(0);
+                }else{
+                    wait(NULL);
+                    dup2(STDOUT_FILENO, 1);
+                }
+
             }
             else
             {
                 PANIC("");
             }
-
             break;
 
         case LIST:
