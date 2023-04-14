@@ -1,5 +1,5 @@
 sleep_seconds=3
-ecode=10
+ecode=0
 
 CC = gcc
 CFLAGS = -m32 -s -Os

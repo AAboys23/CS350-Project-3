@@ -173,7 +173,11 @@ void execcmd(struct cmd *cmd) {
                     execvp(ecmd->argv[0], ecmd->argv);
                     exit(0);
                 }else{
-                    wait(NULL);
+                    int exitstatus;
+                    wait(&exitstatus);
+                    if (WEXITSTATUS(exitstatus) != 0) {
+                        printf("Non-zero exit code (%d) detected\n", WEXITSTATUS(exitstatus));
+                    }
                 }
                 break;
             case REDIR: //Not sure if it works getting problems
