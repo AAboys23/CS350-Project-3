@@ -1,5 +1,9 @@
 #include "parser.h"
 
+int backgroundPIDs[1000];
+
+int backPIDIndex = 0;
+
 void handle_sigint(int sig)
 {
     printf("\nCtrl-C catched. But currently there is no foreground process running.\n");
@@ -280,10 +284,14 @@ void execcmd(struct cmd *cmd) {
 
                 int bpid = fork();
 
-                if (bpid == 0){
-                    execcmd(bcmd->cmd);
-                    waitpid(bpid, NULL, 0);
+                if (bpid == 0){     //CHILD
+                    backgroundPIDs[backPIDIndex] = getpid();    //first add it to the array
+                    backPIDIndex++; //incrememt it by 1
+                    execcmd(bcmd->cmd); //run it
                     exit(0);
+                }
+                else {
+                    //Parent should execute and not wait for the child to finish
                 }
 
                 break;
@@ -310,8 +318,14 @@ int main(void)
     // Read and run input commands.
     while(getcmd(buf, sizeof(buf)) >= 0)
     {
+        for (int i = 0; i < backPIDIndex; i++) {
+            //printf("TEST");
+            waitpid(backgroundPIDs[i], NULL, WNOHANG);   //WNOHANG
+        }
+
         struct cmd * command;
         command = parsecmd(buf);
+
         //printcmd(command); // TODO: run the parsed command instead of printing it
         execcmd(command);
     }
